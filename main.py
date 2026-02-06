@@ -141,12 +141,14 @@ async def get_orders(request: OrdersRequest):
             if next_token:
                 response = orders_api.get_orders(NextToken=next_token)
             else:
+                # SP-API requires ISO8601 with Z suffix
+                created_after_str = created_after.strftime("%Y-%m-%dT%H:%M:%SZ")
                 params = {
-                    "CreatedAfter": created_after.isoformat(),
+                    "CreatedAfter": created_after_str,
                     "MaxResultsPerPage": 100,
                 }
                 if created_before:
-                    params["CreatedBefore"] = created_before.isoformat()
+                    params["CreatedBefore"] = created_before.strftime("%Y-%m-%dT%H:%M:%SZ")
                 response = orders_api.get_orders(**params)
 
             orders = response.payload.get("Orders", [])
