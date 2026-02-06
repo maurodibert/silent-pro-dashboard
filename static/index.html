@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Silent Pro Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 16px;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 16px; padding-top: 8px; }
+    h1 { font-size: 1.5rem; margin-bottom: 2px; color: #f39c12; }
+    .subtitle { color: #666; font-size: 0.75rem; }
+
+    .filters { margin-bottom: 12px; }
+    .filter-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .filter-group { flex: 1; min-width: 0; }
+    .filter-label { font-size: 0.7rem; color: #888; margin-bottom: 4px; text-transform: uppercase; }
+    select, input[type="date"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+    }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    select option { background: #1a1a2e; color: #fff; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+
+    .custom-dates { display: none; gap: 8px; margin-top: 8px; }
+    .custom-dates.show { display: flex; }
+    .custom-dates .filter-group { flex: 1; }
+
+    .load-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: transform 0.1s;
+    }
+    .load-btn:hover { transform: scale(1.02); }
+    .load-btn:active { transform: scale(0.98); }
+    .load-btn:disabled { opacity: 0.6; transform: none; }
+
+    .loading { text-align: center; padding: 40px; display: none; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #f39c12;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .summary-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+    .card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .card-value { font-size: 1.75rem; font-weight: 700; color: #f39c12; }
+    .card-label { font-size: 0.65rem; color: #888; text-transform: uppercase; margin-top: 2px; }
+    .card.shipped .card-value { color: #2ecc71; }
+    .card.pending .card-value { color: #f39c12; }
+    .card.canceled .card-value { color: #e74c3c; }
+
+    .date-breakdown {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .date-breakdown-title { font-size: 0.8rem; color: #888; margin-bottom: 10px; text-transform: uppercase; }
+    .date-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.85rem;
+    }
+    .date-row:last-child { border-bottom: none; }
+    .date-label { color: #aaa; }
+    .date-value { color: #f39c12; font-weight: 600; }
+
+    .product-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .product-header { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .product-name { font-size: 0.95rem; font-weight: 600; display: block; margin-bottom: 6px; }
+    .product-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+    .stat { background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; }
+    .stat-value { color: #f39c12; font-weight: 600; }
+
+    .order-list { display: flex; flex-direction: column; gap: 6px; }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      gap: 6px;
+    }
+    .order-id { font-family: monospace; color: #666; font-size: 0.6rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .order-date { color: #888; font-size: 0.65rem; }
+    .order-qty { color: #aaa; white-space: nowrap; }
+    .order-status { padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500; }
+    .order-status.shipped { background: rgba(46,204,113,0.2); color: #2ecc71; }
+    .order-status.pending { background: rgba(243,156,18,0.2); color: #f39c12; }
+    .order-status.canceled { background: rgba(231,76,60,0.2); color: #e74c3c; }
+
+    .error { background: rgba(231,76,60,0.2); border: 1px solid #e74c3c; color: #e74c3c; padding: 14px; border-radius: 8px; text-align: center; display: none; font-size: 0.85rem; }
+    .results { display: none; }
+    .date-badge { background: rgba(243,156,18,0.2); color: #f39c12; padding: 5px 14px; border-radius: 14px; font-size: 0.75rem; display: inline-block; margin-bottom: 12px; }
+    .no-orders { text-align: center; padding: 24px; color: #666; }
+    .timezone-note { text-align: center; color: #555; font-size: 0.65rem; margin-top: 16px; }
+
+    @media (min-width: 480px) {
+      .summary-cards { grid-template-columns: repeat(4, 1fr); }
+      .card-value { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Silent Pro</h1>
+      <p class="subtitle">Sales Dashboard (Argentina 5am-5am)</p>
+    </header>
+
+    <div class="filters">
+      <div class="filter-row">
+        <div class="filter-group">
+          <div class="filter-label">Period</div>
+          <select id="period-select" onchange="toggleCustomDates()">
+            <option value="0">Today</option>
+            <option value="1">Yesterday</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="15">Last 15 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="custom">Custom range</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Product</div>
+          <select id="product-select">
+            <option value="ALL">All Products</option>
+            <option value="5Y-T9K7-1HM1">Black Mamba Lite</option>
+            <option value="VM-7EA4-DVAO">Black Mamba Premium</option>
+            <option value="J9-H173-J5AF">Old School Mini</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="custom-dates" id="custom-dates">
+        <div class="filter-group">
+          <div class="filter-label">From</div>
+          <input type="date" id="start-date">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">To</div>
+          <input type="date" id="end-date">
+        </div>
+      </div>
+    </div>
+
+    <button class="load-btn" onclick="loadOrders()">Load Orders</button>
+
+    <div class="loading" id="loading"><div class="spinner"></div><p>Fetching orders...</p></div>
+    <div class="error" id="error"></div>
+
+    <div class="results" id="results">
+      <center><span class="date-badge" id="date-badge"></span></center>
+      <div class="summary-cards" id="summary-cards"></div>
+      <div class="date-breakdown" id="date-breakdown" style="display:none;">
+        <div class="date-breakdown-title">Daily Breakdown</div>
+        <div id="date-breakdown-content"></div>
+      </div>
+      <div id="products-container"></div>
+      <p class="timezone-note">Argentina Time (UTC-3) • Day: 5:00 AM to 5:00 AM</p>
+    </div>
+  </div>
+
+  <script>
+    function initDates() {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const weekAgoStr = weekAgo.toISOString().split('T')[0];
+      document.getElementById('end-date').value = todayStr;
+      document.getElementById('start-date').value = weekAgoStr;
+      document.getElementById('end-date').max = todayStr;
+    }
+    initDates();
+
+    function toggleCustomDates() {
+      const period = document.getElementById('period-select').value;
+      const customDates = document.getElementById('custom-dates');
+      customDates.classList.toggle('show', period === 'custom');
+    }
+
+    async function loadOrders() {
+      const btn = document.querySelector('.load-btn');
+      const loading = document.getElementById('loading');
+      const results = document.getElementById('results');
+      const error = document.getElementById('error');
+
+      const periodValue = document.getElementById('period-select').value;
+      const productSku = document.getElementById('product-select').value;
+
+      let requestBody = { product_sku: productSku };
+
+      if (periodValue === 'custom') {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        if (!startDate || !endDate) {
+          error.textContent = 'Please select both start and end dates';
+          error.style.display = 'block';
+          return;
+        }
+        requestBody.start_date = startDate;
+        requestBody.end_date = endDate;
+      } else {
+        requestBody.days_back = parseInt(periodValue);
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+      loading.style.display = 'block';
+      results.style.display = 'none';
+      error.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        const data = await response.json();
+        handleSuccess(data);
+      } catch (err) {
+        handleError(err);
+      }
+    }
+
+    function handleSuccess(data) {
+      const btn = document.querySelector('.load-btn');
+      const loading = document.getElementById('loading');
+      const results = document.getElementById('results');
+      const error = document.getElementById('error');
+
+      btn.disabled = false;
+      btn.textContent = 'Refresh';
+      loading.style.display = 'none';
+
+      if (!data.success) {
+        error.textContent = 'Error: ' + data.error;
+        error.style.display = 'block';
+        return;
+      }
+
+      results.style.display = 'block';
+
+      // Date badge
+      const dateText = data.dateRange.start === data.dateRange.end
+        ? data.dateRange.end
+        : `${data.dateRange.start} → ${data.dateRange.end}`;
+      document.getElementById('date-badge').textContent = dateText;
+
+      // Summary cards
+      const s = data.summary;
+      let totalUnits = 0;
+      const products = data.byProduct;
+      for (const key in products) {
+        totalUnits += products[key].totalUnits;
+      }
+
+      document.getElementById('summary-cards').innerHTML = `
+        <div class="card"><div class="card-value">${totalUnits}</div><div class="card-label">Units</div></div>
+        <div class="card shipped"><div class="card-value">${s.shipped}</div><div class="card-label">Shipped</div></div>
+        <div class="card pending"><div class="card-value">${s.pending}</div><div class="card-label">Pending</div></div>
+        <div class="card canceled"><div class="card-value">${s.canceled}</div><div class="card-label">Canceled</div></div>
+      `;
+
+      // Date breakdown
+      const dateBreakdown = document.getElementById('date-breakdown');
+      const byDate = data.byDate;
+      const dateKeys = Object.keys(byDate).sort().reverse();
+
+      if (dateKeys.length > 1) {
+        dateBreakdown.style.display = 'block';
+        document.getElementById('date-breakdown-content').innerHTML = dateKeys.map(date =>
+          `<div class="date-row"><span class="date-label">${date}</span><span class="date-value">${byDate[date].units} units</span></div>`
+        ).join('');
+      } else {
+        dateBreakdown.style.display = 'none';
+      }
+
+      // Products
+      const container = document.getElementById('products-container');
+      const names = Object.keys(products);
+
+      if (names.length === 0) {
+        container.innerHTML = '<div class="no-orders">No orders found</div>';
+        return;
+      }
+
+      container.innerHTML = names.map(name => {
+        const p = products[name];
+        const orders = p.orders;
+        const showDate = dateKeys.length > 1;
+
+        let orderListHtml = '';
+        if (orders.length <= 25) {
+          orderListHtml = '<div class="order-list">' + orders.map(o => `
+            <div class="order-item">
+              <span class="order-id">${o.orderId}</span>
+              ${showDate ? `<span class="order-date">${o.date}</span>` : ''}
+              <span class="order-qty">x${o.quantity}</span>
+              <span class="order-status ${o.status.toLowerCase()}">${o.status}</span>
+            </div>
+          `).join('') + '</div>';
+        } else {
+          orderListHtml = `<div style="text-align:center;color:#666;padding:10px;font-size:0.8rem;">${orders.length} orders (list hidden)</div>`;
+        }
+
+        return `
+          <div class="product-section">
+            <div class="product-header">
+              <span class="product-name">${name}</span>
+              <div class="product-stats">
+                <span class="stat"><span class="stat-value">${p.totalUnits}</span> units</span>
+                <span class="stat">$<span class="stat-value">${p.totalRevenue.toFixed(2)}</span></span>
+              </div>
+            </div>
+            ${orderListHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleError(err) {
+      const btn = document.querySelector('.load-btn');
+      document.getElementById('loading').style.display = 'none';
+      btn.disabled = false;
+      btn.textContent = 'Load Orders';
+      const error = document.getElementById('error');
+      error.textContent = 'Error: ' + (err.message || err);
+      error.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
