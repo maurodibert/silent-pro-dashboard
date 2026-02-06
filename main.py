@@ -24,8 +24,8 @@ CONFIG = {
     "LWA_CLIENT_ID": os.getenv("LWA_CLIENT_ID"),
     "LWA_CLIENT_SECRET": os.getenv("LWA_CLIENT_SECRET"),
     "REFRESH_TOKEN": os.getenv("REFRESH_TOKEN"),
-    "AWS_ACCESS_KEY": os.getenv("AWS_ACCESS_KEY"),
-    "AWS_SECRET_KEY": os.getenv("AWS_SECRET_KEY"),
+    "AWS_ACCESS_KEY": os.getenv("SP_AWS_ACCESS_KEY"),
+    "AWS_SECRET_KEY": os.getenv("SP_AWS_SECRET_KEY"),
     "SP_API_ROLE_ARN": os.getenv("SP_API_ROLE_ARN"),
     "MARKETPLACE_ID": os.getenv("MARKETPLACE_ID", "ATVPDKIKX0DER"),
     "DAY_START_HOUR_UTC": 8,  # 5am ART = 8am UTC
