@@ -32,7 +32,7 @@ CONFIG = {
     "AWS_SECRET_KEY": os.getenv("SP_AWS_SECRET_KEY"),
     "SP_API_ROLE_ARN": os.getenv("SP_API_ROLE_ARN"),
     "MARKETPLACE_ID": os.getenv("MARKETPLACE_ID", "ATVPDKIKX0DER"),
-    "DAY_START_HOUR_UTC": 8,  # 5am ART = 8am UTC
+    "DAY_START_HOUR_UTC": 7,  # 4am ART = 7am UTC
 }
 
 PRODUCTS = {
@@ -54,10 +54,10 @@ def get_credentials():
 
 
 def get_business_day_start_utc(days_back: int = 0) -> datetime:
-    """Get business day start in UTC. Business day: 5am ART = 8am UTC"""
+    """Get business day start in UTC. Business day: 4am ART = 7am UTC"""
     now = datetime.now(timezone.utc)
 
-    # If before 8am UTC, we're in yesterday's business day
+    # If before 7am UTC, we're in yesterday's business day
     if now.hour < CONFIG["DAY_START_HOUR_UTC"]:
         days_back += 1
 
@@ -77,7 +77,7 @@ def date_string_to_utc(date_str: str, is_end: bool = False) -> datetime:
 
     base = datetime(year, month, day, CONFIG["DAY_START_HOUR_UTC"], 0, 0, tzinfo=timezone.utc)
     if is_end:
-        # End of business day = next day at 8am UTC
+        # End of business day = next day at 7am UTC
         return base + timedelta(days=1)
     return base
 
@@ -89,12 +89,12 @@ def get_argentina_date(utc_dt: datetime) -> str:
 
 
 def get_current_argentina_date() -> str:
-    """Get current date in Argentina (considering 5am boundary)"""
+    """Get current date in Argentina (considering 4am boundary)"""
     now = datetime.now(timezone.utc)
     art_time = now - timedelta(hours=3)
 
-    # If before 5am ART, still "yesterday"
-    if art_time.hour < 5:
+    # If before 4am ART, still "yesterday"
+    if art_time.hour < 4:
         art_time -= timedelta(days=1)
 
     return art_time.strftime("%Y-%m-%d")
@@ -190,7 +190,7 @@ def _fetch_orders_sync(request: OrdersRequest):
         order_date_utc = datetime.fromisoformat(order["PurchaseDate"].replace("Z", "+00:00"))
         order_art = order_date_utc - timedelta(hours=3)
 
-        if order_art.hour < 5:
+        if order_art.hour < 4:
             order_art -= timedelta(days=1)
 
         date_key = order_art.strftime("%Y-%m-%d")

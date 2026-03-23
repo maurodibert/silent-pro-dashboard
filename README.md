@@ -6,7 +6,7 @@ Amazon FBA sales dashboard for Silent Pro basketball products.
 
 - Real-time sales data from Amazon SP-API
 - Filter by product and date range
-- Argentina timezone support (5am-5am business day)
+- Argentina timezone support (4am-4am business day)
 - Mobile-first responsive design
 
 ## Local Development
